@@ -473,6 +473,7 @@ check('full: 不依赖原组名（规则相同）', JSON.stringify(fuEn.rules) =
 const fuPreserve = run('mode=full', (() => {
   const c = JSON.parse(JSON.stringify(BASE));
   c.dns = { enable: true, nameserver: ['https://223.5.5.5/dns-query'], 'fake-ip-filter': ['+.lan'] };
+  c.hosts = { 'cncgzbgp01.169cdn-agent.com': 'c79983ae.169cdn-agent.com' };
   c.tun = { enable: true, stack: 'mixed' };
   c.sniffer = { enable: true };
   c['external-controller'] = '127.0.0.1:9090';
@@ -480,13 +481,14 @@ const fuPreserve = run('mode=full', (() => {
   return c;
 })());
 check('full: dns 原样保留', JSON.stringify(fuPreserve.dns).includes('223.5.5.5'));
+check('full: hosts 原样保留', JSON.stringify(fuPreserve.hosts).includes('cncgzbgp01'), JSON.stringify(fuPreserve.hosts));
 check('full: tun 被丢弃', fuPreserve.tun === undefined);
 check('full: sniffer 被丢弃', fuPreserve.sniffer === undefined);
 check('full: external-controller 被丢弃', fuPreserve['external-controller'] === undefined);
 check('full: 端口用默认 7890（不继承机场 9999）', fuPreserve['mixed-port'] === 7890, fuPreserve['mixed-port']);
 check('full: 只剩这些字段',
   JSON.stringify(Object.keys(fuPreserve).sort()) === JSON.stringify(
-    ['allow-lan', 'dns', 'geo-auto-update', 'geo-update-interval', 'geodata-mode', 'geox-url',
+    ['allow-lan', 'dns', 'geo-auto-update', 'geo-update-interval', 'geodata-mode', 'geox-url', 'hosts',
      'ipv6', 'log-level', 'mixed-port', 'mode', 'proxies', 'proxy-groups', 'rules']),
   Object.keys(fuPreserve).join(','));
 

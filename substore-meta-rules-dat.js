@@ -16,7 +16,7 @@
  *   mode=full       整份配置重写：组名和规则全写死，不依赖机场原有分组（默认）
  *                     组：PROXY / 🔯 故障转移 / 🤖 AI服务 / 🎥 国际媒体 / 📚 学术资源 / 🐦 社交平台 /
  *                         📲 电报消息 / 🛑 广告拦截 / 🎯 全球直连
- *                     只保留机场的 dns 和节点，其余字段（tun/sniffer/profile/hosts/流量统计/
+ *                     只保留机场的 dns、hosts 和节点，其余字段（tun/sniffer/profile/流量统计/
  *                     原有分组与规则集…）全部丢弃，重新生成
  *   port=7890       full 模式下生成的 mixed-port
  *   mode=patch      保留原分流结构，只把能识别出来的第三方规则集换成 meta-rules-dat 的等价规则集
@@ -52,7 +52,7 @@
  * 作用域：文件脚本（$content 为 YAML 文本）。不要用在「单条订阅」的节点脚本上。
  *
  * 各模式对原配置的改动范围：
- *   full                → 只保留 dns（以及节点 / proxy-providers），其余字段全部丢弃
+ *   full                → 只保留 dns、hosts（以及节点 / proxy-providers），其余字段全部丢弃
  *   patch/geo/rebuild   → 只改 rules / rule-providers / proxy-groups / geox-url，
  *                         dns、tun、sniffer、profile、hosts、proxy-providers 原样保留
  *                         （geox-url 只替换 geoip/geosite/mmdb 三个键，你自己加的 asn 等键保留）
@@ -968,6 +968,7 @@
       ipv6: false
     };
     if (cfg.dns !== undefined) out.dns = cfg.dns;
+    if (cfg.hosts !== undefined) out.hosts = cfg.hosts; // 机场常用 hosts 给节点域名做映射，必须保留
     out['geodata-mode'] = true; // GEOSITE/GEOIP 走 dat
     if (useList.length) out['proxy-providers'] = cfg['proxy-providers'];
     out.proxies = Array.isArray(cfg.proxies) ? cfg.proxies : [];
@@ -977,9 +978,11 @@
     Object.keys(cfg).forEach(function (k) { delete cfg[k]; });
     Object.keys(out).forEach(function (k) { cfg[k] = out[k]; });
 
+    var keptFields = [cfg.dns !== undefined ? 'dns' : '', cfg.hosts !== undefined ? 'hosts' : '']
+      .filter(Boolean).join('、');
     log('full：重建配置 → 组 ' + groups.length + ' 个、规则 ' + cfg.rules.length + ' 条、节点 ' +
         proxyNames.length + ' 个' + (useList.length ? ' + provider ' + useList.length + ' 个' : '') +
-        '；仅保留机场的 ' + (cfg.dns !== undefined ? 'dns' : '（无 dns），其余全新建'));
+        '；保留 ' + (keptFields || '（无 dns/hosts）') + '，其余全新建');
     return cfg;
   }
 

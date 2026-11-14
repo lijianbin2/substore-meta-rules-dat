@@ -8,7 +8,7 @@
 
 | 模式 | 行为 | 适用 |
 | --- | --- | --- |
-| `full`（默认） | 整份配置重写：只保留机场的 `dns`（和节点 / `proxy-providers`），分组与规则全部生成 | 组名想自己定、规则想固定 |
+| `full`（默认） | 整份配置重写：只保留机场的 `dns`、`hosts`（和节点 / `proxy-providers`），分组与规则全部生成 | 组名想自己定、规则想固定 |
 | `geo` | 只替换 `rules` 为 GEOSITE/GEOIP 模板，规则目标自动适配你已有的组名（`Proxies` / `节点选择` / `YouTube` / `OpenAI` …） | 想保留机场分组，只换规则 |
 | `rebuild` | 按 meta-rules-dat 分类重建 `rules` / `rule-providers`，组名按关键词匹配 | 半自动重构 |
 | `patch` | 保留原分流结构，只把能识别的第三方规则集换成等价规则集 | 只想换规则源（ACL4SSR → meta-rules-dat） |
@@ -27,7 +27,7 @@ PROXY           select    故障转移 / 全球直连 / 全部节点
 🎯 全球直连      select    DIRECT
 ```
 
-规则走 `GEOSITE` / `GEOIP`，`geox-url` 指向 meta-rules-dat 的 `release` 分支，`geodata-mode: true`。
+规则走 `GEOSITE` / `GEOIP`，`geox-url` 指向 meta-rules-dat 的 `release` 分支，`geodata-mode: true`。`hosts` 会原样保留——机场常用它给节点域名做地址映射，丢了可能解析不了节点。
 
 地区识别顺序：国旗 emoji → 中文关键词 → 英文代码（按单词边界，`RUSSIA` 不会命中 `US`）。机场塞的套餐信息假节点（`到期:` / `流量:` …）不会进 AI 组。
 

@@ -1,0 +1,11 @@
+{
+  "name": "substore-meta-rules-dat",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sub-Store 文件脚本：用 MetaCubeX/meta-rules-dat 生成 mihomo 分流",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node test/meta-rules-check.js"
+  },
+  "license": "MIT"
+}

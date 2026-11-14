@@ -959,7 +959,7 @@
       return g;
     });
 
-    // 只保留机场的 dns，其余字段全部丢弃，重新生成一份干净配置
+    // 只保留机场的 dns / hosts，其余字段全部丢弃，重新生成一份干净配置
     var out = {
       'mixed-port': CFG.port,
       'allow-lan': false,

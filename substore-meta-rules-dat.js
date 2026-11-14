@@ -19,6 +19,10 @@
  *                     只保留机场的 dns、hosts 和节点，其余字段（tun/sniffer/profile/流量统计/
  *                     原有分组与规则集…）全部丢弃，重新生成
  *   port=7890       full 模式下生成的 mixed-port
+ *
+ * 自定义规则：脚本顶部的 CUSTOM_RULES 会被前置到所有规则之前（优先级最高），
+ * 目标写 `AI服务` 时按模式替换成真实组名（full → 🤖 AI服务，geo/rebuild → 现有 AI 组或主组）。
+ * patch 模式不动你的规则，因此不插入。
  *   mode=patch      保留原分流结构，只把能识别出来的第三方规则集换成 meta-rules-dat 的等价规则集
  *   mode=rebuild    推倒重来：清空 rules / rule-providers，按 meta-rules-dat 的标准分类重建一套分流
  *   mode=geo        用内置的 GEOSITE/GEOIP 分流模板（走 geosite.dat / geoip.dat，不建规则集）：
@@ -999,12 +1003,12 @@
     if (useList.length) out['proxy-providers'] = cfg['proxy-providers'];
     out.proxies = Array.isArray(cfg.proxies) ? cfg.proxies : [];
     out['proxy-groups'] = groups;
-    out.rules = CUSTOM_RULES.map(function (r) {
-      return r.replace(/,AI服务$/, ',🤖 AI服务');
-    }).concat(FULL_RULES);
+    out.rules = FULL_RULES.slice();
 
     Object.keys(cfg).forEach(function (k) { delete cfg[k]; });
     Object.keys(out).forEach(function (k) { cfg[k] = out[k]; });
+
+    prependCustomRules(cfg, '🤖 AI服务');
 
     var keptFields = [cfg.dns !== undefined ? 'dns' : '', cfg.hosts !== undefined ? 'hosts' : '']
       .filter(Boolean).join('、');

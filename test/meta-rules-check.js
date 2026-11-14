@@ -282,6 +282,9 @@ const snap = (o) => JSON.stringify(o);
 
 console.log('\n=== case 6: mode=geo（中文组名配置，不建组）===');
 const GEO_BASE = [
+  'DOMAIN,cpa.wisdamsatan.de,DIRECT',
+  'DOMAIN-SUFFIX,bingsoft.net,DIRECT',
+  'DOMAIN-SUFFIX,war.gov,🚀 节点选择',
   'RULE-SET,cn,DIRECT',
   'GEOSITE,category-ads-all,🛑 广告拦截',
   'GEOSITE,private,DIRECT',
@@ -321,6 +324,9 @@ check('geo: strict=1 删掉缺规则集的 RULE-SET,cn', !geStrict.rules.some((r
 
 console.log('\n=== case 6.1: mode=geo&groups=1（中文组名，缺的才建）===');
 const GEO_CREATED = [
+  'DOMAIN,cpa.wisdamsatan.de,DIRECT',
+  'DOMAIN-SUFFIX,bingsoft.net,DIRECT',
+  'DOMAIN-SUFFIX,war.gov,🤖 AI服务',
   'RULE-SET,cn,DIRECT',
   'GEOSITE,category-ads-all,🛑 广告拦截',
   'GEOSITE,private,DIRECT',
@@ -384,7 +390,7 @@ console.log('\n=== case 6.4: mode=geo（已有 cn 规则集 / 已有 PROXY）===
 const withCn = JSON.parse(JSON.stringify(BASE));
 withCn['rule-providers'].cn = { type: 'http', behavior: 'domain', url: 'https://example.com/cn.yaml', path: './ruleset/cn.yaml' };
 const ge3 = run('mode=geo', withCn);
-check('geo: 有 cn 规则集时保留该行', ge3.rules[0] === 'RULE-SET,cn,DIRECT');
+check('geo: 有 cn 规则集时保留该行', ge3.rules.includes('RULE-SET,cn,DIRECT'));
 check('geo: 同时保留被引用的规则集', !!ge3['rule-providers'].cn);
 check('geo: 未被引用的规则集被清掉', !ge3['rule-providers'].Google);
 
@@ -397,6 +403,9 @@ assertTargets('geo-nogroup', ge4);
 
 console.log('\n=== case 8: mode=full（整份配置重写）===');
 const FULL_EXPECT = [
+  'DOMAIN,cpa.wisdamsatan.de,DIRECT',
+  'DOMAIN-SUFFIX,bingsoft.net,DIRECT',
+  'DOMAIN-SUFFIX,war.gov,🤖 AI服务',
   'GEOSITE,category-ads-all,🛑 广告拦截',
   'GEOSITE,private,DIRECT',
   'GEOSITE,category-ai-!cn,🤖 AI服务',

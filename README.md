@@ -31,6 +31,21 @@ PROXY           select    故障转移 / 全球直连 / 全部节点
 
 地区识别顺序：国旗 emoji → 中文关键词 → 英文代码（按单词边界，`RUSSIA` 不会命中 `US`）。机场塞的套餐信息假节点（`到期:` / `流量:` …）不会进 AI 组。
 
+## 🎯 自定义规则
+
+脚本顶部有一组内置的自定义规则，会**放在所有 GEOSITE/GEOIP 规则之前**，所以优先级最高：
+
+```js
+var CUSTOM_RULES = [
+  'DOMAIN,cpa.wisdamsatan.de,DIRECT',
+  'DOMAIN-SUFFIX,bingsoft.net,DIRECT',
+  'DOMAIN-SUFFIX,war.gov,AI服务'
+];
+```
+
+- 目标写 `AI服务` 时，脚本会按模式替换成真实组名：`full` → `🤖 AI服务`；`geo`/`rebuild` → 你配置里已有的 AI 组（如 `OpenAI`），没有则退回主组，不会引用不存在的组。
+- 想加自己的规则，直接往这个数组里追加即可（写法与 mihomo 一致：`DOMAIN` / `DOMAIN-SUFFIX` / `IP-CIDR` / `PROCESS-NAME`…）。
+- `patch` 模式不动你的规则，因此不会插入这组自定义规则。
 ## 用法
 
 1. Sub-Store → 文件 → 新建 **mihomo 配置**，来源选机场订阅（或粘贴机场配置）；

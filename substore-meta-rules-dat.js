@@ -904,6 +904,32 @@
     { name: '🎯 全球直连', type: 'select', members: ['DIRECT'] }
   ];
 
+  // 自定义规则：优先于 GEOSITE/GEOIP 生效，目标写 AI服务 时按模式替换成真实组名
+  var CUSTOM_RULES = [
+    'DOMAIN,cpa.wisdamsatan.de,DIRECT',
+    'DOMAIN-SUFFIX,bingsoft.net,DIRECT',
+    'DOMAIN-SUFFIX,war.gov,AI服务'
+  ];
+
+  function prependCustomRules(cfg, aiTarget) {
+    var extra = CUSTOM_RULES.map(function (r) {
+      return r.replace(/,AI服务$/, ',' + (aiTarget || '🤖 AI服务'));
+    });
+    cfg.rules = extra.concat(cfg.rules || []);
+    log('rules：前置 ' + extra.length + ' 条自定义规则（AI 目标 = ' + (aiTarget || '🤖 AI服务') + '）');
+    return cfg;
+  }
+
+  // 当前配置里 AI 组的真实名字；找不到就退回主组，绝不返回不存在的组
+  function currentAiTarget(cfg) {
+    var names = (Array.isArray(cfg['proxy-groups']) ? cfg['proxy-groups'] : [])
+      .map(function (g) { return g && g.name; }).filter(Boolean);
+    if (names.indexOf(GEO_ROLE.ai.name) >= 0) return GEO_ROLE.ai.name;
+    return geoFindGroup(names, GEO_ROLE.ai.hints) ||
+           geoFindGroup(names, ['proxies', 'proxy', '节点选择', '手动切换', 'select', 'global', '🚀']) ||
+           'DIRECT';
+  }
+
   var FULL_RULES = [
     'GEOSITE,category-ads-all,🛑 广告拦截',
     'GEOSITE,private,DIRECT',
@@ -973,7 +999,9 @@
     if (useList.length) out['proxy-providers'] = cfg['proxy-providers'];
     out.proxies = Array.isArray(cfg.proxies) ? cfg.proxies : [];
     out['proxy-groups'] = groups;
-    out.rules = FULL_RULES.slice();
+    out.rules = CUSTOM_RULES.map(function (r) {
+      return r.replace(/,AI服务$/, ',🤖 AI服务');
+    }).concat(FULL_RULES);
 
     Object.keys(cfg).forEach(function (k) { delete cfg[k]; });
     Object.keys(out).forEach(function (k) { cfg[k] = out[k]; });
@@ -1071,10 +1099,12 @@
     // 先补组，rebuild 才能把规则落到新组上
     if (CFG.groups) applyGroups(cfg);
     applyRebuild(cfg);
+    prependCustomRules(cfg, currentAiTarget(cfg));
   } else if (CFG.mode === 'geo' || CFG.mode === 'rules' || CFG.mode === 'geosite') {
     applyGeo(cfg);
     // 规则里的 PROXY / 中文组名 → 换成你配置里真实存在的组
     resolveGeoTargets(cfg);
+    prependCustomRules(cfg, currentAiTarget(cfg));
   } else if (CFG.mode === 'full' || CFG.mode === 'rewrite') {
     applyFull(cfg);
   } else {

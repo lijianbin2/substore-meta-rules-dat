@@ -41,6 +41,8 @@
  *                   已有同名组一律不动；有节点就填进组，只有 proxy-providers 时用 use + filter
  *   ai_exclude=HK   AI服务 排除的地区代码，逗号分隔，例如 HK,TW
  *   ai_unknown=1    AI服务 是否也收「地区识别不出来」的节点（默认 0，即排除）
+ *   dns_policy=0    full/geo 模式不覆盖 dns.nameserver-policy（默认 true：覆盖成
+ *                   geosite:cn,private,apple → doh.pub + alidns；geosite:category-ads-all → rcode://success）
  *   cdn=raw         默认。直连 raw.githubusercontent.com
  *   cdn=jsdelivr    cdn.jsdelivr.net（国内较快，实测带 ! 的分类也能取到）
  *   cdn=ghproxy     走 ghfast.top 加速
@@ -909,7 +911,7 @@
     { name: '🎯 全球直连', type: 'select', members: ['DIRECT'] }
   ];
 
-  // DNS 策略：合并进保留下来的 dns（只加 nameserver-policy 的这两个键，不动其它字段）
+  // DNS 策略：整块覆盖保留下来的 dns.nameserver-policy（其它 dns 字段不动）
   var DNS_POLICY = {
     'geosite:cn,private,apple': [
       'https://doh.pub/dns-query',
@@ -918,9 +920,9 @@
     'geosite:category-ads-all': 'rcode://success'
   };
 
-  function mergeDnsPolicy(cfg) {
+  function applyDnsPolicy(cfg) {
     if (!CFG.dnsPolicy) return cfg;
-    // patch / rebuild 承诺「dns 一个字符都不动」，所以只在这两种重写模式里合并
+    // patch / rebuild 承诺「dns 一个字符都不动」，所以只在这两种重写模式里覆盖
     var m = CFG.mode;
     if (m !== 'full' && m !== 'rewrite' && m !== 'geo' && m !== 'rules' && m !== 'geosite') return cfg;
     if (!cfg.dns || typeof cfg.dns !== 'object') {
@@ -1145,7 +1147,7 @@
     if (CFG.groups) applyGroups(cfg);
   }
 
-  mergeDnsPolicy(cfg);
+  applyDnsPolicy(cfg);
   applyGeox(cfg);
 
   // full 是重建，其余模式只改 rules/rule-providers/proxy-groups/geox-url

@@ -519,7 +519,7 @@ const fu2 = run('mode=full', JSON.parse(JSON.stringify(fu)));
 check('full: 幂等', JSON.stringify(fu2.rules) === JSON.stringify(fu.rules) &&
   JSON.stringify(fu2['proxy-groups'].map((g) => g.name)) === JSON.stringify(FULL_GROUP_NAMES));
 
-console.log('\n=== case 8.5: DNS nameserver-policy 合并 ===');
+console.log('\n=== case 8.5: DNS nameserver-policy 覆盖 ===');
 const mkDnsCfg = () => {
   const c = JSON.parse(JSON.stringify(BASE));
   c.dns = {
@@ -532,7 +532,7 @@ const mkDnsCfg = () => {
 };
 const fuDns = run('mode=full', mkDnsCfg());
 const np = fuDns.dns['nameserver-policy'];
-check('dns: 合并 cn/private/apple 策略',
+check('dns: 覆盖后含 cn/private/apple 策略',
   Array.isArray(np['geosite:cn,private,apple']) && np['geosite:cn,private,apple'].length === 2, JSON.stringify(np));
 check('dns: 广告域名 rcode://success', np['geosite:category-ads-all'] === 'rcode://success');
 check('dns: 机场原有 policy 键被覆盖掉', np['geosite:geolocation-!cn'] === undefined, JSON.stringify(np));

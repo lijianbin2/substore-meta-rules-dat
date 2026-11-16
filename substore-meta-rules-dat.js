@@ -927,11 +927,13 @@
       log('dns：原配置没有 dns，跳过 nameserver-policy');
       return cfg;
     }
-    var np = (cfg.dns['nameserver-policy'] && typeof cfg.dns['nameserver-policy'] === 'object')
-      ? cfg.dns['nameserver-policy'] : {};
+    var before = cfg.dns['nameserver-policy'] && typeof cfg.dns['nameserver-policy'] === 'object'
+      ? Object.keys(cfg.dns['nameserver-policy']).length : 0;
+    var np = {};
     Object.keys(DNS_POLICY).forEach(function (k) { np[k] = DNS_POLICY[k]; });
-    cfg.dns['nameserver-policy'] = np;
-    log('dns：已合并 nameserver-policy（' + Object.keys(DNS_POLICY).join(' / ') + '）');
+    cfg.dns['nameserver-policy'] = np; // 整块覆盖，不保留机场原有 policy
+    log('dns：覆盖 nameserver-policy' + (before ? '（丢弃机场原有 ' + before + ' 个键）' : '') +
+        ' → ' + Object.keys(DNS_POLICY).join(' / '));
     return cfg;
   }
 

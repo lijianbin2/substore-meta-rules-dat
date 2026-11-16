@@ -535,7 +535,8 @@ const np = fuDns.dns['nameserver-policy'];
 check('dns: 合并 cn/private/apple 策略',
   Array.isArray(np['geosite:cn,private,apple']) && np['geosite:cn,private,apple'].length === 2, JSON.stringify(np));
 check('dns: 广告域名 rcode://success', np['geosite:category-ads-all'] === 'rcode://success');
-check('dns: 原有 policy 键保留', np['geosite:geolocation-!cn'] === 'https://1.1.1.1/dns-query');
+check('dns: 机场原有 policy 键被覆盖掉', np['geosite:geolocation-!cn'] === undefined, JSON.stringify(np));
+check('dns: policy 只剩这两个键', Object.keys(np).length === 2, JSON.stringify(np));
 check('dns: 原 nameserver 未被覆盖',
   JSON.stringify(fuDns.dns.nameserver) === '["https://223.5.5.5/dns-query"]', JSON.stringify(fuDns.dns.nameserver));
 check('dns: fake-ip 模式等其它字段保留', fuDns.dns['enhanced-mode'] === 'fake-ip');

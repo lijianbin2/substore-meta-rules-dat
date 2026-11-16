@@ -519,6 +519,32 @@ const fu2 = run('mode=full', JSON.parse(JSON.stringify(fu)));
 check('full: 幂等', JSON.stringify(fu2.rules) === JSON.stringify(fu.rules) &&
   JSON.stringify(fu2['proxy-groups'].map((g) => g.name)) === JSON.stringify(FULL_GROUP_NAMES));
 
+console.log('\n=== case 8.5: DNS nameserver-policy 合并 ===');
+const mkDnsCfg = () => {
+  const c = JSON.parse(JSON.stringify(BASE));
+  c.dns = {
+    enable: true,
+    'enhanced-mode': 'fake-ip',
+    nameserver: ['https://223.5.5.5/dns-query'],
+    'nameserver-policy': { 'geosite:geolocation-!cn': 'https://1.1.1.1/dns-query' }
+  };
+  return c;
+};
+const fuDns = run('mode=full', mkDnsCfg());
+const np = fuDns.dns['nameserver-policy'];
+check('dns: 合并 cn/private/apple 策略',
+  Array.isArray(np['geosite:cn,private,apple']) && np['geosite:cn,private,apple'].length === 2, JSON.stringify(np));
+check('dns: 广告域名 rcode://success', np['geosite:category-ads-all'] === 'rcode://success');
+check('dns: 原有 policy 键保留', np['geosite:geolocation-!cn'] === 'https://1.1.1.1/dns-query');
+check('dns: 原 nameserver 未被覆盖',
+  JSON.stringify(fuDns.dns.nameserver) === '["https://223.5.5.5/dns-query"]', JSON.stringify(fuDns.dns.nameserver));
+check('dns: fake-ip 模式等其它字段保留', fuDns.dns['enhanced-mode'] === 'fake-ip');
+
+const fuDnsOff = run('mode=full&dns_policy=0', mkDnsCfg());
+check('dns: dns_policy=0 时不写入新策略', !fuDnsOff.dns['nameserver-policy']['geosite:cn,private,apple']);
+const noDns = run('mode=full', { proxies: [{ name: 'JP-01', type: 'ss' }], rules: [] });
+check('dns: 原配置无 dns 时不报错', noDns.dns === undefined);
+
 console.log('\n=== case 7: 参数非法 / 空输入 ===');
 try { run('magic'); check('非法 mode 默认走 patch（不抛错）', true); }
 catch (e) { check('非法 mode 不应抛错', false, e.message); }

@@ -153,6 +153,7 @@
     port: parseInt(str('port', '7890'), 10) || 7890,
     aiExclude: str('ai_exclude', 'HK').toUpperCase().split(/[;,\s]+/).filter(Boolean),
     aiUnknown: flag('ai_unknown', false),
+    dnsPolicy: flag('dns_policy', true),
     prefix: (str('prefix', 'msd').replace(/[^\w.-]/g, '') || 'msd'),
     pathDir: str('path', './ruleset').replace(/[\\/]+$/, '')
   };
@@ -908,6 +909,32 @@
     { name: '🎯 全球直连', type: 'select', members: ['DIRECT'] }
   ];
 
+  // DNS 策略：合并进保留下来的 dns（只加 nameserver-policy 的这两个键，不动其它字段）
+  var DNS_POLICY = {
+    'geosite:cn,private,apple': [
+      'https://doh.pub/dns-query',
+      'https://dns.alidns.com/dns-query'
+    ],
+    'geosite:category-ads-all': 'rcode://success'
+  };
+
+  function mergeDnsPolicy(cfg) {
+    if (!CFG.dnsPolicy) return cfg;
+    // patch / rebuild 承诺「dns 一个字符都不动」，所以只在这两种重写模式里合并
+    var m = CFG.mode;
+    if (m !== 'full' && m !== 'rewrite' && m !== 'geo' && m !== 'rules' && m !== 'geosite') return cfg;
+    if (!cfg.dns || typeof cfg.dns !== 'object') {
+      log('dns：原配置没有 dns，跳过 nameserver-policy');
+      return cfg;
+    }
+    var np = (cfg.dns['nameserver-policy'] && typeof cfg.dns['nameserver-policy'] === 'object')
+      ? cfg.dns['nameserver-policy'] : {};
+    Object.keys(DNS_POLICY).forEach(function (k) { np[k] = DNS_POLICY[k]; });
+    cfg.dns['nameserver-policy'] = np;
+    log('dns：已合并 nameserver-policy（' + Object.keys(DNS_POLICY).join(' / ') + '）');
+    return cfg;
+  }
+
   // 自定义规则：优先于 GEOSITE/GEOIP 生效，目标写 AI服务 时按模式替换成真实组名
   var CUSTOM_RULES = [
     'DOMAIN,cpa.wisdamsatan.de,DIRECT',
@@ -1116,6 +1143,7 @@
     if (CFG.groups) applyGroups(cfg);
   }
 
+  mergeDnsPolicy(cfg);
   applyGeox(cfg);
 
   // full 是重建，其余模式只改 rules/rule-providers/proxy-groups/geox-url

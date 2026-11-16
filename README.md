@@ -31,6 +31,24 @@ PROXY           select    故障转移 / 全球直连 / 全部节点
 
 地区识别顺序：国旗 emoji → 中文关键词 → 英文代码（按单词边界，`RUSSIA` 不会命中 `US`）。机场塞的套餐信息假节点（`到期:` / `流量:` …）不会进 AI 组。
 
+## 🌐 DNS 策略
+
+`full` / `geo` 模式会把下面这段合并进保留下来的 `dns`（只加 `nameserver-policy` 的两个键，原有的 `nameserver`、`fallback`、`fake-ip-filter` 等一律不动）：
+
+```yaml
+dns:
+  nameserver-policy:
+    "geosite:cn,private,apple":
+      - https://doh.pub/dns-query
+      - https://dns.alidns.com/dns-query
+    "geosite:category-ads-all": rcode://success
+```
+
+- 国内/局域网/Apple 相关域名走腾讯 + 阿里的 DoH；
+- 广告域名直接返回成功（`rcode://success`），配合 `🛑 广告拦截` 组一起用；
+- 机场原有的 policy 键（例如 `geosite:geolocation-!cn`）会保留，同键才覆盖；
+- 不想要就加参数 `dns_policy=0`；
+- `patch` / `rebuild` 不动 `dns`（那是它们“原样保留”的承诺），所以只在这两种模式下生效——需要时切到 `full` 或 `geo`。
 ## 🎯 自定义规则
 
 脚本顶部有一组内置的自定义规则，会**放在所有 GEOSITE/GEOIP 规则之前**，所以优先级最高：

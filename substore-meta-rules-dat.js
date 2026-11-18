@@ -434,10 +434,13 @@
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  // 英文/数字代码要求独立单词，避免 RUSSIA → US、SINGAPORE → IN 这类误伤
-  function hasLatin(name, kw) {
-    return new RegExp('(^|[^a-z])' + escapeRe(kw) + '([^a-z]|$)', 'i').test(name);
-  }
+  // 英文/数字代码按单词边界匹配，避免 RUSSIA → US、SINGAPORE → IN 这类误伤
+
+  // 启动时把每个地区的英文关键词合并成一个正则，避免每节点每关键词都 new RegExp
+  REGIONS.forEach(function (r) {
+    if (!r.latin || !r.latin.length) return;
+    r.latinRe = new RegExp('(?:^|[^a-z])(?:' + r.latin.map(escapeRe).join('|') + ')(?:[^a-z]|$)', 'i');
+  });
 
   function flagOf(code) {
     return String.fromCodePoint(0x1F1E6 + code.charCodeAt(0) - 65, 0x1F1E6 + code.charCodeAt(1) - 65);
@@ -461,9 +464,7 @@
       for (var j = 0; j < r.cjk.length; j++) {
         if (s.indexOf(r.cjk[j]) >= 0) return r.code;
       }
-      for (var k = 0; k < r.latin.length; k++) {
-        if (hasLatin(s, r.latin[k])) return r.code;
-      }
+      if (r.latinRe && r.latinRe.test(s)) return r.code;
     }
     return null;
   }
@@ -777,8 +778,8 @@
     return null;
   }
 
-  function buildGeoAiGroup(cfg) {
-    var proxyNames = nodeNames(cfg.proxies);
+  function buildGeoAiGroup(cfg, names) {
+    var proxyNames = names || nodeNames(cfg.proxies);
     var useList = Object.keys(cfg['proxy-providers'] || {});
     var g = { name: GEO_ROLE.ai.name, type: 'fallback', url: TEST_URL, interval: 300 };
     var nodes = pickAiNodes(proxyNames);
@@ -1002,7 +1003,7 @@
 
     var groups = FULL_GROUPS.map(function (spec) {
       if (spec.type === 'ai') {
-        var ai = buildGeoAiGroup(cfg);
+        var ai = buildGeoAiGroup(cfg, proxyNames);
         if (!ai.proxies || !ai.proxies.length) ai.proxies = ['DIRECT'];
         return ai;
       }
